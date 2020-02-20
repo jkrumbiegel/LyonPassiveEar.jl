@@ -1,0 +1,13 @@
+name = "LyonPassiveEar"
+uuid = "7d34b371-ee87-4bdd-a25a-bc09a0767c1b"
+authors = ["Julius Krumbiegel <julius.krumbiegel@gmail.com>"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
