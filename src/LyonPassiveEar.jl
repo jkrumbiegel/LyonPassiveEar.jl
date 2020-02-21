@@ -1,5 +1,9 @@
 module LyonPassiveEar
 
-greet() = print("Hello World!")
+include("soscascade.jl")
+include("sosfilters.jl")
+
+export soscascade
+export sosfilters
 
 end # module
