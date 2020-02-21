@@ -1,4 +1,4 @@
-function soscascade(signal::AbstractVector, coeffs, state)
+function soscascade(signal::AbstractVector, coeffs::AbstractMatrix, state::AbstractMatrix)
 
     nSamples = size(signal, 1)
     nChannels = size(coeffs, 1)

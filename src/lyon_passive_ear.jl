@@ -1,7 +1,7 @@
-function lyon_passive_ear(signal::AbstractVector; sample_rate = 16000, decimation_factor::Int = 1
+function lyon_passive_ear(signal::AbstractVector; sample_rate = 16000, decimation_factor::Int = 1,
         ear_q = 8, step_factor = ear_q / 32, differ = true, agc = true, tau_factor = 3)
 
-    ear_filters = design_lyon_filters(sample_rate, ear_q, step_factor)
+    ear_filters, _ = design_lyon_filters(sample_rate, ear_q, step_factor)
     n_samples = length(signal)
 
     n_output_samples = floor(Int, n_samples / decimation_factor)

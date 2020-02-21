@@ -1,8 +1,8 @@
 function second_order_filter(f, q, fs)
-    cft = f / fs
-    rho = exp(-pi * cft / q)
-    theta = 2pi * cft * sqrt(1 - 1.0 / (4 * q ^ 2))
-    filts = [1, -2rho * cos(theta), rho ^ 2]
+    cft = f ./ fs
+    rho = exp.(-pi .* cft ./ q)
+    theta = 2pi .* cft .* sqrt.(1 .- 1.0 ./ (4 .* q .^ 2))
+    filts = hcat(ones(size(rho)), -2rho .* cos.(theta), rho .^ 2)
 end
 
 function freq_resp(filter, f, fs)
@@ -18,7 +18,7 @@ function set_gain(filter, desired, f, fs)
     filter
 end
 
-function design_lyon_filters(fs; ear_q = 8, step_factor = ear_q / 32)
+function design_lyon_filters(fs, ear_q = 8, step_factor = ear_q / 32)
     Eb = 1000.0
     EarZeroOffset = 1.5
     EarSharpness = 5.0
@@ -50,16 +50,21 @@ function design_lyon_filters(fs; ear_q = 8, step_factor = ear_q / 32)
     CascadePoleCF = center_freqs
     CascadePoleQ = center_freqs ./ EarBandwidth
 
+
     # Now lets find some filters.... first the zeros then the poles
     zerofilts = second_order_filter(CascadeZeroCF, CascadeZeroQ, fs)
     polefilts = second_order_filter(CascadePoleCF, CascadePoleQ, fs)
     # filters = np.vstack([zerofilts, polefilts[1:, :]])
-    filters = cat(zerofilts, polefilts[:, 2:end])
+    filters = cat(zerofilts, polefilts[:, 2:end], dims = 2)
+
 
     # Now we can set the DC gain of each stage.
     dcgain = zeros(NumberOfChannels)
-    dcgain[1:end] = center_freqs[1:end-1] / center_freqs[2:end]
+
+
+    dcgain[2:end] .= center_freqs[1:end-1] ./ center_freqs[2:end]
     dcgain[1] = dcgain[2]
+
 
     for i in 1:NumberOfChannels
         filters[i, :] = set_gain(filters[i, :], dcgain[i], 0, fs)
@@ -73,7 +78,12 @@ function design_lyon_filters(fs; ear_q = 8, step_factor = ear_q / 32)
     front_1 = [1, 0, -1, top_poles[2], top_poles[3]]
     front[2, :] = set_gain(front_1, 1, fs / 4, fs)
 
+
     # Now, put them all together.
-    filters = cat(front, filters)
+    filters = cat(front, filters, dims = 1)
     return filters, center_freqs
+end
+
+function epsilon_from_tau(tau, sample_rate)
+    1 - exp(-1.0 / tau / sample_rate)
 end
