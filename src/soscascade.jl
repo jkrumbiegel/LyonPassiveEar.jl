@@ -27,6 +27,6 @@ function soscascade(signal::AbstractVector, coeffs::AbstractMatrix, state::Abstr
 
     end
 
-    output
+    output, state
 
 end

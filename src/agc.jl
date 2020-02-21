@@ -54,3 +54,20 @@ function agc(input, nChannels, nSamples, nStages, agcParams, state, output)
     nothing
 
 end
+
+function agc(input::AbstractMatrix, agcParams, state = nothing)
+
+    nChannels, nSamples = size(input)
+    nStages = size(agcParams)[2]
+
+    if isnothing(state)
+        state = zeros(nChannels, nStages)
+    end
+
+    output = zeros(nChannels, nSamples)
+
+    agc(input, nChannels, nSamples, nStages, agcParams, state, output)
+
+    output, state
+
+end

@@ -10,7 +10,7 @@ using Test
 
     state = zeros(2, 2)
 
-    output = soscascade(input, coeffs, state)
+    output, state = soscascade(input, coeffs, state)
 
     exp_state = [-0.07 -0.06; -0.00 -0.00]'
     @test all(abs.(state .- exp_state) .< EPS)
@@ -80,5 +80,5 @@ end
 end
 
 @testset "lyon_passive_ear" begin
-    lyon_passive_ear([1.0, 0, 0, 0, 0, 0], sample_rate = 400, decimation_factor = 1)
+    lyon_passive_ear([1.0, 0, 0, 0, 0, 0], sample_rate = 400, decimation_factor = 1, differ = false)
 end
