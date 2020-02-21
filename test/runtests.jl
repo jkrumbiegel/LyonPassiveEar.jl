@@ -64,3 +64,7 @@ end
     @test all(abs.(agcOut .- exp_agcOut) .< EPS)
 
 end
+
+@testset "lyon_filters" begin
+    design_lyon_filters(10000.0)
+end
