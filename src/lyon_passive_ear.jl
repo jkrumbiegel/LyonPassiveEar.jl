@@ -8,12 +8,14 @@ function lyon_passive_ear(signal::AbstractVector; sample_rate = 16000, decimatio
     n_channels = size(ear_filters, 1) ## ???
 
     sos_output = zeros(n_channels, decimation_factor)
-    sos_state = zeros(2, n_channels)
+    sos_state = zeros(n_channels, 2)
     agc_state = zeros(n_channels, 4)
     y = zeros(n_channels, n_output_samples)
 
     dec_eps = epsilon_from_tau(decimation_factor / sample_rate * tau_factor, sample_rate)
+
     dec_state = zeros(n_channels, 2)
+
     _coeffs = [0.0, 0, 1, -2 * (1 - dec_eps), (1 - dec_eps) ^ 2]
     dec_filt = set_gain(_coeffs, 1, 0, sample_rate)
 
@@ -22,34 +24,35 @@ function lyon_passive_ear(signal::AbstractVector; sample_rate = 16000, decimatio
 
     for i in 1:n_output_samples
 
+
         window = signal[(i - 1) * decimation_factor + 1 : i * decimation_factor]
-        # @show window
         sos_output, sos_state = soscascade(window, ear_filters, sos_state)
-        # @show sos_output
+
+        sos_output = sos_output' # BUG why transpose?
         output = clamp.(sos_output, 0, Inf) # Half Wave Rectify
-        # @show typeof(output)
-        # @show size(output)
         output[1, 1] = 0 # Test Hack to make inversion easier.
-        output[1, 2] = 0
+        output[2, 1] = 0
+
         if useagc
-            # @show tars
-            # @show epses
-            agc_params = hcat(tars, epses)
+            agc_params = hcat(tars, epses)'
             output, agc_state = agc(output, agc_params, agc_state)
-            # @show size(output)
         end
-        if differ # BUG
-            output = cat(output[1, :], output[1:end-1, :] .- output[2:end, :], dims = 1)
-            # @show size(output)
+        if differ
+            output = cat(output[1:1, :], output[1:end-1, :] .- output[2:end, :], dims = 1)
             output = clamp.(output, 0, Inf)
         end
         if decimation_factor > 1
-            output, dec_state = sosfilters(output, dec_filt, #[:, np.newaxis])
+
+
+            output, dec_state = sosfilters(
+                output,
+                reshape(dec_filt, 1, :), #[:, np.newaxis])
                 dec_state)
+
         end
-        # @show size(y)
-        # y[:, i] = output[:, end]
-        y[:, i] = output[:]
+
+        # println("--- end")
+        y[:, i] = output[:, end]
     end
 
     y[3:end, :]

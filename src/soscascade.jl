@@ -17,10 +17,10 @@ function soscascade(signal::AbstractVector, coeffs::AbstractMatrix, state::Abstr
             b1 = coeffs[i, 4]
             b2 = coeffs[i, 5]
 
-            output[n, i] = a0 * inp + state[1, i]
+            output[n, i] = a0 * inp + state[i, 1]
 
-            state[1, i] = a1 * inp - b1 * output[n, i] + state[2, i]
-            state[2, i] = a2 * inp - b2 * output[n, i]
+            state[i, 1] = a1 * inp - b1 * output[n, i] + state[i, 2]
+            state[i, 2] = a2 * inp - b2 * output[n, i]
 
             inp = output[n, i]
         end

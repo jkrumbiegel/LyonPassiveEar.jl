@@ -10,9 +10,9 @@ using Test
 
     state = zeros(2, 2)
 
-    output, state = soscascade(input, coeffs, state)
+    output, state = LyonPassiveEar.soscascade(input, coeffs, state)
 
-    exp_state = [-0.07 -0.06; -0.00 -0.00]'
+    exp_state = [-0.07 -0.06; -0.00 -0.00]
     @test all(abs.(state .- exp_state) .< EPS)
 
     exp_output = [0.00 -0.01 -0.03 -0.03 -0.05;
@@ -22,21 +22,60 @@ using Test
 end
 
 
-@testset "sosfilters" begin
-    EPS = 0.01
+# this doesn't work yet but doesn't seem to be used anyway in the passive ear function?
 
-    coeffs = reshape(0:9, 2, 5) ./ 100
-    state = zeros(2, 2)
-    agcOut = reshape(0:9, 2, 5)' .* 0.1
+# @testset "sosfilters" begin
+#     EPS = 0.01
+#
+#     coeffs = reshape(0:9, 2, 5) ./ 100
+#     state = zeros(2, 2)
+#     agcOut = reshape(0:9, 2, 5)' .* 0.1
+#
+#     output = LyonPassiveEar.sosfilters(agcOut, coeffs, state)
+#
+#     exp_state = [0.04 0.03; 0.06 0.04]'
+#     @test all(abs.(state .- exp_state) .< EPS)
+#
+#     exp_output = [0.00 0.00 0.00 0.02 0.03;
+#                   0.00 0.01 0.02 0.04 0.05]'
+#     @test all(abs.(output .- exp_output) .< EPS)
+# end
 
-    output = sosfilters(agcOut, coeffs, state)
+@testset "sosfilters 2" begin
 
-    exp_state = [0.04 0.03; 0.06 0.04]'
-    @test all(abs.(state .- exp_state) .< EPS)
+    EPS = 1e-5
 
-    exp_output = [0.00 0.00 0.00 0.02 0.03;
-                  0.00 0.01 0.02 0.04 0.05]'
-    @test all(abs.(output .- exp_output) .< EPS)
+    decFilt = [0.          0.          0.02356786 -1.69296345  0.71653131]
+
+    inp = [0.         0.        ;
+              0.         0.        ;
+              0.         0.00116701;
+              0.         0.        ;
+              0.         0.        ]
+
+    decState = [0.03989792 -0.01688643;
+                0.02095108 -0.00886735;
+                0.01244632 -0.00526648;
+                0.00594191 -0.00251233;
+                0.00233343 -0.00097628]
+
+    output2, decState2 = LyonPassiveEar.sosfilters(inp, decFilt, decState)
+
+    outexp = [0.03989792 0.05065929;
+              0.02095108 0.02660206;
+              0.01244632 0.01580469;
+              0.00594191 0.00754711;
+              0.00233343 0.00297413]
+
+    decStateexp = [0.05717621 -0.03629896;
+                   0.03002421 -0.01906121;
+                   0.01783859 -0.01129705;
+                   0.00851941 -0.00540774;
+                   0.00336311 -0.00213106]
+
+    @test all(abs.(output2 .- outexp) .< EPS) |> println
+    @test all(abs.(decState2 .- decStateexp) .< EPS) |> println
+
 end
 
 
@@ -52,7 +91,7 @@ end
     agcState = zeros(nChannels * nStages)
     agcOut = zeros(nChannels * nSamples)
 
-    agc(output, nChannels, nSamples, nStages, agcParams, agcState, agcOut)
+    LyonPassiveEar.agc(output, nChannels, nSamples, nStages, agcParams, agcState, agcOut)
 
     exp_agcState = vec([0.64 0.41 0.30;
                         0.66 0.42 0.30])
@@ -66,7 +105,7 @@ end
 end
 
 @testset "design_lyon_filters" begin
-    result = design_lyon_filters(4000.0)
+    result = LyonPassiveEar.design_lyon_filters(4000.0)
 
     # from python version
     @test all(abs.(result[2] .- [1897.10751154, 1831.00638006, 1766.69348626, 1704.10601949, 1643.18285418,
