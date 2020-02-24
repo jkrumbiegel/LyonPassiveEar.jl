@@ -22,6 +22,9 @@ function lyon_passive_ear(signal::AbstractVector; sample_rate = 16000, decimatio
     epses = [epsilon_from_tau(x, sample_rate) for x in [.64, .16, .04, .01]]
     tars = [.0032, .0016, .0008, .0004]
 
+    # move agc_params out of loop
+    agc_params = hcat(tars, epses)'
+
     for i in 1:n_output_samples
 
         @views window = signal[(i - 1) * decimation_factor + 1 : i * decimation_factor]
@@ -33,7 +36,6 @@ function lyon_passive_ear(signal::AbstractVector; sample_rate = 16000, decimatio
         output[2, 1] = 0
 
         if useagc
-            agc_params = hcat(tars, epses)'
             output, agc_state = agc(output, agc_params, agc_state)
         end
         if differ
