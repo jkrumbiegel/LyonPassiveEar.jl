@@ -11,7 +11,7 @@ function agc_step(input, inputindexoffset, output, outputindexoffset,
 
     f = 0.0
 
-    for i in 1:n-1
+    @inbounds for i in 1:n-1
         oi = outputindexoffset + i
         ii = inputindexoffset + i
         si = stateindexoffset + i
@@ -20,7 +20,7 @@ function agc_step(input, inputindexoffset, output, outputindexoffset,
         f = output[oi] * EpsOverTarget + OneMinusEpsOverThree *
             (prevState + state[si] + state[si + 1])
 
-        f = min(f, StateLimit)
+        f = f < StateLimit ? f : StateLimit
         prevState = state[si]
         state[si] = f
     end
@@ -33,7 +33,7 @@ function agc_step(input, inputindexoffset, output, outputindexoffset,
     output[oi] = abs(input[ii] * (1.0 - state[si]))
     f = output[oi] * EpsOverTarget + OneMinusEpsOverThree *
         (prevState + state[si] + state[si])
-    f = min(f, StateLimit)
+    f = f < StateLimit ? f : StateLimit
     state[si] = f
 
     nothing
@@ -42,7 +42,7 @@ end
 
 function agc(input, nChannels, nSamples, nStages, agcParams, state, output)
 
-    for j in 0:nSamples-1
+    @inbounds for j in 0:nSamples-1
         agc_step(input, j * nChannels, output, j * nChannels, state, 0, agcParams[2], agcParams[1], nChannels)
 
         for i in 1:nStages-1
