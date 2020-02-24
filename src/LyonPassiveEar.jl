@@ -1,5 +1,8 @@
 module LyonPassiveEar
 
+import TimerOutputs
+
+
 include("soscascade.jl")
 include("sosfilters.jl")
 include("agc.jl")

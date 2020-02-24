@@ -55,7 +55,7 @@ function agc(input, nChannels, nSamples, nStages, agcParams, state, output)
 
 end
 
-function agc(input::AbstractMatrix, agcParams, state = nothing)
+function agc(input::AbstractMatrix, agcParams, state = nothing, output_prealloc = nothing)
 
     nChannels, nSamples = size(input)
     nStages = size(agcParams)[2]
@@ -64,7 +64,14 @@ function agc(input::AbstractMatrix, agcParams, state = nothing)
         state = zeros(nChannels, nStages)
     end
 
-    output = zeros(nChannels, nSamples)
+    output = if isnothing(output_prealloc)
+        zeros(nChannels, nSamples)
+    else
+        if size(output_prealloc) != size(input)
+            error("Invalid output preallocation size $(size(output_prealloc)), should be $(size(input)).")
+        end
+        output_prealloc
+    end
 
     agc(input, nChannels, nSamples, nStages, agcParams, state, output)
 

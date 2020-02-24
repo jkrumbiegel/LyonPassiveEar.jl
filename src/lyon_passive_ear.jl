@@ -1,6 +1,10 @@
 function lyon_passive_ear(signal::AbstractVector; sample_rate = 16000, decimation_factor::Int = 1,
         ear_q = 8, step_factor = ear_q / 32, differ = true, useagc = true, tau_factor = 3)
 
+    TimerOutputs.reset_timer!()
+
+
+
     ear_filters, _ = design_lyon_filters(sample_rate, ear_q, step_factor)
     n_samples = length(signal)
 
@@ -25,35 +29,44 @@ function lyon_passive_ear(signal::AbstractVector; sample_rate = 16000, decimatio
     # move agc_params out of loop
     agc_params = hcat(tars, epses)'
 
-    for i in 1:n_output_samples
 
-        @views window = signal[(i - 1) * decimation_factor + 1 : i * decimation_factor]
-        sos_output, sos_state = soscascade(window, ear_filters, sos_state)
+    agc_output_prealloc = zeros(size(ear_filters, 1), decimation_factor)
 
-        sos_output = sos_output' # BUG why transpose?
-        output = clamp!(sos_output, 0, Inf) # Half Wave Rectify
-        output[1, 1] = 0 # Test Hack to make inversion easier.
-        output[2, 1] = 0
+    TimerOutputs.@timeit "loop" begin
+        for i in 1:n_output_samples
 
-        if useagc
-            output, agc_state = agc(output, agc_params, agc_state)
+            @views window = signal[(i - 1) * decimation_factor + 1 : i * decimation_factor]
+            TimerOutputs.@timeit "soscascade" begin
+                sos_output, sos_state = soscascade(window, ear_filters, sos_state)
+            end
+
+            sos_output = sos_output' # BUG why transpose?
+            output = clamp!(sos_output, 0, Inf) # Half Wave Rectify
+            output[1, 1] = 0 # Test Hack to make inversion easier.
+            output[2, 1] = 0
+
+            TimerOutputs.@timeit "agc" if useagc
+                output, agc_state = agc(output, agc_params, agc_state, agc_output_prealloc)
+            end
+            TimerOutputs.@timeit "differ" if differ
+                # @views output = vcat(output[1:1, :], output[1:end-1, :] .- output[2:end, :])
+                output[2:end, :] .= @view(output[1:end-1, :]) .- @view(output[2:end, :])
+                clamp!(output, 0, Inf)
+            end
+            TimerOutputs.@timeit "sosfilters" if decimation_factor > 1
+
+                output, dec_state = sosfilters(
+                    output,
+                    reshape(dec_filt, 1, :), #[:, np.newaxis])
+                    dec_state)
+
+            end
+
+            y[:, i] = output[:, end]
         end
-        if differ
-            # @views output = vcat(output[1:1, :], output[1:end-1, :] .- output[2:end, :])
-            output[2:end, :] .= @view(output[1:end-1, :]) .- @view(output[2:end, :])
-            clamp!(output, 0, Inf)
-        end
-        if decimation_factor > 1
-
-            output, dec_state = sosfilters(
-                output,
-                reshape(dec_filt, 1, :), #[:, np.newaxis])
-                dec_state)
-
-        end
-
-        y[:, i] = output[:, end]
     end
+
+    TimerOutputs.print_timer()
 
     y[3:end, :]
 end

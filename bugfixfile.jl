@@ -2,12 +2,31 @@ using LibSndFile
 using FileIO
 using LyonPassiveEar
 using ClearStacktrace
+using Makie, MakieLayout
+using PyCall
 
 
-vowel = load("vowel_a.wav")
 
-mono = Float64.(vowel[:, 1]).data
+aeiou = load("aeiou.wav")
 
-coch = lyon_passive_ear(mono[1:100], sample_rate = 44100, decimation_factor = 64, differ = false)
+mono = Float64.(aeiou[:, 1].data)
 
-lyon_passive_ear([1.0, 0, 0, 0, 0, 0], sample_rate = 400, decimation_factor = 1)
+coch = lyon_passive_ear(mono, sample_rate = 44100, decimation_factor = 64)
+
+@profiler lyon_passive_ear(mono, sample_rate = 44100, decimation_factor = 64)
+
+
+
+##
+scene, layout = layoutscene()
+
+ax1 = layout[1, 1] = LAxis(scene)
+ax2 = layout[2, 1] = LAxis(scene)
+
+tightlimits!(ax2)
+
+lines!(ax1, mono)
+heatmap!(ax2, coch')
+
+
+scene
