@@ -28,7 +28,7 @@ function lyon_passive_ear(signal::AbstractVector; sample_rate = 16000, decimatio
         sos_output, sos_state = soscascade(window, ear_filters, sos_state)
 
         sos_output = sos_output' # BUG why transpose?
-        output = clamp.(sos_output, 0, Inf) # Half Wave Rectify
+        output = clamp!(sos_output, 0, Inf) # Half Wave Rectify
         output[1, 1] = 0 # Test Hack to make inversion easier.
         output[2, 1] = 0
 
@@ -37,7 +37,8 @@ function lyon_passive_ear(signal::AbstractVector; sample_rate = 16000, decimatio
             output, agc_state = agc(output, agc_params, agc_state)
         end
         if differ
-            @views output = vcat(output[1:1, :], output[1:end-1, :] .- output[2:end, :])
+            # @views output = vcat(output[1:1, :], output[1:end-1, :] .- output[2:end, :])
+            output[2:end, :] .= @view(output[1:end-1, :]) .- @view(output[2:end, :])
             clamp!(output, 0, Inf)
         end
         if decimation_factor > 1
