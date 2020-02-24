@@ -73,8 +73,8 @@ end
                    0.00851941 -0.00540774;
                    0.00336311 -0.00213106]
 
-    @test all(abs.(output2 .- outexp) .< EPS) |> println
-    @test all(abs.(decState2 .- decStateexp) .< EPS) |> println
+    @test all(abs.(output2 .- outexp) .< EPS)
+    @test all(abs.(decState2 .- decStateexp) .< EPS)
 
 end
 
@@ -119,5 +119,23 @@ end
 end
 
 @testset "lyon_passive_ear" begin
-    lyon_passive_ear([1.0, 0, 0, 0, 0, 0], sample_rate = 400, decimation_factor = 1, differ = false)
+    expected_output = [0.         0.00502543 0.01080264;
+                       0.         0.00384371 0.00826242;
+                       0.         0.00213897 0.00459793]
+
+    result = lyon_passive_ear([1.0, 0, 0, 0, 0, 0], sample_rate = 400, decimation_factor = 2)
+
+    @test all(abs.(expected_output .- result) .< 1e-5)
+
+
+
+
+
+    expected_output_2 = [0.         0.00734996 0.01580469;
+                         0.         0.00350625 0.00754711;
+                         0.         0.00136727 0.00297413]
+
+    result_2 = lyon_passive_ear([1.0, 0, 0, 0, 0, 0], sample_rate = 400, decimation_factor = 2, differ = false)
+
+    @test all(abs.(expected_output_2 .- result_2) .< 1e-5)
 end
